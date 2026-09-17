@@ -1,13 +1,17 @@
+import os
 import mysql.connector
 import pymongo
 from datetime import datetime, timedelta
 
 def setup_mysql():
     print("Setting up MySQL Relational Tier...")
+    # Using environment variable for security, falling back to default if not set
+    db_password = os.getenv("MYSQL_PASSWORD", "Jagruti@123")
+    
     conn = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Jagruti@123"  # Update password if yours is different
+        password=db_password
     )
     cursor = conn.cursor()
     
@@ -34,6 +38,17 @@ def setup_mysql():
         );
     """)
 
+    # Safely create indexes for optimization (handled via try-except to avoid syntax errors)
+    try:
+        cursor.execute("CREATE INDEX idx_region ON clients(region);")
+    except Exception:
+        pass  # Index already exists
+
+    try:
+        cursor.execute("CREATE INDEX idx_client_fk ON orders(client_id);")
+    except Exception:
+        pass  # Index already exists
+
     # Insert 100+ records to satisfy assessment requirements
     cursor.execute("SELECT COUNT(*) FROM clients;")
     if cursor.fetchone()[0] < 100:
@@ -50,6 +65,8 @@ def setup_mysql():
             )
         conn.commit()
         print("Successfully generated 100+ records in MySQL!")
+    else:
+        print("MySQL already contains 100+ records. Skipping generation.")
     
     cursor.close()
     conn.close()
@@ -59,6 +76,10 @@ def setup_mongodb():
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["kws_agricultural_db"]
     trial_logs = db["field_trial_logs"]
+    
+    # Create indexes for MongoDB optimization
+    trial_logs.create_index([("trial_id", 1)], unique=True)
+    trial_logs.create_index([("crop_type", 1)])
     
     if trial_logs.count_documents({}) < 100:
         trial_logs.delete_many({})
@@ -75,6 +96,8 @@ def setup_mongodb():
             })
         trial_logs.insert_many(log_batch)
         print("Successfully generated 100+ documents in MongoDB!")
+    else:
+        print("MongoDB already contains 100+ documents. Skipping generation.")
 
 if __name__ == "__main__":
     setup_mysql()

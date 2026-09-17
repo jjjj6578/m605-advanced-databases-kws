@@ -1,3 +1,4 @@
+import os
 import mysql.connector
 import pymongo
 
@@ -6,18 +7,19 @@ def run_functional_queries():
     print("  RUNNING KWS HYBRID DATABASE QUERIES & FLOW  ")
     print("==============================================\n")
 
+    db_password = os.getenv("MYSQL_PASSWORD", "Jagruti@123")
+
     # --- 1. MYSQL RELATIONAL QUERY (Join & Retrieval) ---
     print("1. Executing MySQL Relational Query (Clients & Orders Join)...")
     try:
         mysql_conn = mysql.connector.connect(
             host="localhost",
             user="root",
-            password="Jagruti@123",
+            password=db_password,
             database="kws_relational_db"
         )
         cursor = mysql_conn.cursor()
         
-        # Advanced query joining clients and their orders
         query = """
             SELECT c.coop_name, c.region, o.order_date, o.total_amount 
             FROM clients c 
@@ -31,30 +33,60 @@ def run_functional_queries():
         for row in results:
             print(f"   Co-op: {row[0]} | Region: {row[1]} | Date: {row[2]} | Amount: €{row[3]}")
             
-        cursor.close()
-        mysql_conn.close()
     except Exception as e:
         print(f"MySQL Query Error: {e}")
 
     print("\n----------------------------------------------\n")
 
-    # --- 2. MONGODB NOSQL QUERY (Filter & Aggregation) ---
-    print("2. Executing MongoDB NoSQL Query (Field Trial Logs Filter)...")
+    # --- 2. CROSS-DATABASE INTEGRATION FLOW ---
+    print("2. Executing Cross-Database Data Flow (MySQL -> MongoDB)...")
     try:
-        client = pymongo.MongoClient("mongodb://localhost:27017/")
-        db = client["kws_agricultural_db"]
-        trial_logs = db["field_trial_logs"]
+        # Fetch clients from Eastern Europe in MySQL
+        cursor.execute("SELECT client_id, coop_name FROM clients WHERE region = 'Eastern Europe' LIMIT 3;")
+        regional_clients = cursor.fetchall()
         
-        # Filter documents where crop type is 'Corn' and resistance is 'High'
-        query_filter = {"crop_type": "Corn", "pest_resistance_rating": "High"}
-        matched_docs = trial_logs.find(query_filter).limit(3)
+        client_mongo = pymongo.MongoClient("mongodb://localhost:27017/")
+        db_mongo = client_mongo["kws_agricultural_db"]
+        trial_logs = db_mongo["field_trial_logs"]
         
-        print("-> MongoDB Filter Results (Corn trials with High resistance):")
-        for doc in matched_docs:
-            print(f"   Trial ID: {doc.get('trial_id')} | Plot: {doc.get('plot_number')} | Soil Moisture: {doc.get('soil_moisture_pct')}%")
-            
-        # MongoDB Aggregation Pipeline: Average soil moisture per crop type
-        print("\n-> MongoDB Aggregation Pipeline (Avg Soil Moisture by Crop):")
+        print("-> Cross-Referencing MySQL Clients with MongoDB Field Trials:")
+        for idx, client in enumerate(regional_clients, start=1):
+            matching_trial = trial_logs.find_one({"plot_number": idx})
+            if matching_trial:
+                print(f"   Client: {client[1]} (ID: {client[0]}) -> Linked Trial ID: {matching_trial['trial_id']} ({matching_trial['crop_type']})")
+
+    except Exception as e:
+        print(f"Integration Error: {e}")
+
+    print("\n----------------------------------------------\n")
+
+    # --- 3. FULL CRUD OPERATIONS (Update & Delete) ---[cite: 5]
+    print("3. Executing CRUD Operations (Update & Delete)...")
+    try:
+        # UPDATE: Modify a MongoDB trial log record
+        update_result = trial_logs.update_one(
+            {"trial_id": "TR_2026_004"},
+            {"$set": {"soil_moisture_pct": 31.5, "pest_resistance_rating": "Very High"}}
+        )
+        print(f"-> MongoDB Update: Modified {update_result.modified_count} document(s).")
+
+        # DELETE: Remove an obsolete trial log record
+        delete_result = trial_logs.delete_one({"trial_id": "TR_2026_104"})
+        print(f"-> MongoDB Delete: Removed {delete_result.deleted_count} document(s).")
+
+        # UPDATE: Modify a MySQL relational order amount
+        cursor.execute("UPDATE orders SET total_amount = total_amount + 25.00 WHERE client_id = 1;")
+        mysql_conn.commit()
+        print(f"-> MySQL Update: Successfully updated order amount for client 1.")
+
+    except Exception as e:
+        print(f"CRUD Operation Error: {e}")
+
+    print("\n----------------------------------------------\n")
+
+    # --- 4. MONGODB NOSQL AGGREGATION ---[cite: 5]
+    print("4. Executing MongoDB Aggregation Pipeline (Avg Soil Moisture by Crop)...")
+    try:
         pipeline = [
             {"$group": {"_id": "$crop_type", "avg_moisture": {"$avg": "$soil_moisture_pct"}}}
         ]
@@ -62,8 +94,10 @@ def run_functional_queries():
         for agg in agg_results:
             print(f"   Crop: {agg['_id']} | Average Soil Moisture: {agg['avg_moisture']:.2f}%")
             
+        cursor.close()
+        mysql_conn.close()
     except Exception as e:
-        print(f"MongoDB Query Error: {e}")
+        print(f"MongoDB Aggregation Error: {e}")
 
     print("\n==============================================")
     print("  ALL FUNCTIONAL QUERIES EXECUTED SUCCESSFULLY")

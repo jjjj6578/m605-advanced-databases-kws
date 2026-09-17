@@ -4,22 +4,23 @@
 **Student ID:** GH1057897  
 **Module:** M605 Advanced Databases  
 **Domain:** KWS Agricultural Operations (Seed Production & Field Trials)  
+**GitHub Repository:** [Advance Databases Project](https://github.com/username/Advance_Databases_Project)
 
 ---
 
 ## Project Overview
-This project implements a **hybrid three-tier database architecture** combining a relational SQL database, a non-relational NoSQL database, and an application integration layer built in Python. 
+This project implements a **hybrid database architecture** for KWS Agricultural Operations, combining a relational SQL database for structured financial/client accounts and a non-relational NoSQL database for flexible field trial logs. An automated Python application layer connects both tiers to handle integration data flows, full CRUD operations, and advanced aggregations.
 
-* **Relational Tier (MySQL):** Stores structured operational data such as customer profiles (`clients`) and sales transactions (`orders`) with strict ACID compliance and foreign key constraints.
-* **Non-Relational Tier (MongoDB):** Stores semi-structured, flexible documents containing environmental sensor data and agronomic metrics (`field_trial_logs`).
-* **Application Layer (Python):** Acts as the bridge connecting both database systems, automating record generation (100+ volume scale) and executing functional queries, joins, and aggregations.
+* **Relational Tier (MySQL):** `kws_relational_db` managing structured grower accounts (`clients`) and sales orders (`orders`) with strict ACID compliance, foreign key constraints, and indexing.
+* **Non-Relational Tier (MongoDB):** `kws_agricultural_db` managing schema-flexible agronomic sensor and trial data (`field_trial_logs`).
+* **Application Layer (Python):** VS Code workspace scripts handling database setup, indexing, cross-database integration, and execution.
 
 ---
 
-## Repository Structure
+## Workspace Directory Structure
 ```text
-ADVANCE_DATABASES_PROJECT/
+Advance_Databases_Project/
 │
-├── init_kws_advanced.py    # Script to setup databases and generate 100+ records
-├── queries_kws.py          # Script to execute functional SQL JOINs and MongoDB aggregations
+├── init_kws_advanced.py    # Python script to initialize databases, apply indexes, & generate 100+ records
+├── queries_kws.py          # Python script to execute functional SQL JOINs, cross-platform flow, CRUD, & aggregations
 └── README.md               # Project documentation and setup guide
