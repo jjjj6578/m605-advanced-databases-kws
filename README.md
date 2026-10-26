@@ -19,8 +19,11 @@ This project implements a **hybrid database architecture** for KWS Agricultural 
 
 ## Workspace Directory Structure
 ```text
-Advance_Databases_Project/
+m605-advanced-databases-kws/
 │
-├── init_kws_advanced.py    # Python script to initialize databases, apply indexes, & generate 100+ records
-├── queries_kws.py          # Python script to execute functional SQL JOINs, cross-platform flow, CRUD, & aggregations
-└── README.md               # Project documentation and setup guide
+├── database/                   # Standalone SQL DDL schemas and analytical queries
+│   ├── schema_ddl.sql          # MySQL Relational Tier tables, keys, & indexes
+│   └── analytics_queries.sql   # Relational JOINs, updates, & aggregations
+├── init_kws_advanced.py        # Python script to initialize databases & generate records
+├── queries_kws.py              # Python script to execute integration flow, CRUD, & aggregations
+└── README.md                   # Project documentation and setup guide
